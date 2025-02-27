@@ -171,6 +171,9 @@
       // Get current scatter view configuration
       const currentView = scatterViewOptions.find(v => v.id === scatterView);
       
+      // Import necessary components from Recharts
+      const { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } = Recharts;
+      
       return (
         <div className="p-4">
           <h1 className="text-2xl font-bold mb-4">Burlingame Housing Market Cluster Analysis</h1>
@@ -216,6 +219,101 @@
             </div>
           </div>
           
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-semibold">Interactive Scatter Plot</h2>
+              <div className="flex space-x-2">
+                {scatterViewOptions.map(option => (
+                  <button
+                    key={option.id}
+                    className={`px-3 py-1 text-sm rounded ${scatterView === option.id ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                    onClick={() => setScatterView(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="h-96 border rounded-lg p-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart
+                  margin={{ top: 20, right: 20, bottom: 20, left: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    type="number" 
+                    dataKey={currentView.x} 
+                    name={currentView.x} 
+                    label={{ value: currentView.x, position: 'bottom', offset: 0 }}
+                    domain={['auto', 'auto']}
+                  />
+                  <YAxis 
+                    type="number" 
+                    dataKey={currentView.y} 
+                    name={currentView.y}
+                    label={{ value: currentView.y, angle: -90, position: 'left' }}
+                    domain={['auto', 'auto']}
+                  />
+                  <ZAxis range={[50, 400]} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  
+                  {Object.keys(clusterStats).map(cluster => (
+                    <Scatter 
+                      key={cluster}
+                      name={getClusterName(parseInt(cluster))}
+                      data={data.filter(d => d.cluster === parseInt(cluster))}
+                      fill={clusterColors[cluster]}
+                    />
+                  ))}
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Cluster Comparison</h2>
+            <div className="h-80 border rounded-lg p-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={Object.entries(clusterStats).map(([cluster, stats]) => ({
+                    cluster: getClusterName(parseInt(cluster)),
+                    price: stats.features['Sale Price'].mean,
+                    size: stats.features.GLA.mean,
+                    lot: stats.features['Lot Size'].mean / 10, // Scale down lot size for better visualization
+                    age: stats.features.Age.mean * 10000, // Scale up age for better visualization
+                    color: clusterColors[cluster]
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="cluster" angle={-45} textAnchor="end" height={70} />
+                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                  <Tooltip formatter={(value, name) => {
+                    if (name === 'price') return formatCurrency(value);
+                    if (name === 'size') return `${Math.round(value)} sq.ft.`;
+                    if (name === 'lot') return `${Math.round(value * 10)} sq.ft.`;
+                    if (name === 'age') return `${Math.round(value / 10000)} years`;
+                    return value;
+                  }} />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="price" name="Avg. Price" fill="#8884d8">
+                    {Object.entries(clusterStats).map(([cluster]) => (
+                      <Cell key={cluster} fill={clusterColors[cluster]} />
+                    ))}
+                  </Bar>
+                  <Bar yAxisId="left" dataKey="size" name="Avg. Size (sq.ft.)" fill="#82ca9d">
+                    {Object.entries(clusterStats).map(([cluster]) => (
+                      <Cell key={cluster} fill={clusterColors[cluster]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
           <div>
             <h2 className="text-xl font-semibold mb-2">Detailed Cluster Statistics</h2>
             <div className="overflow-x-auto">
