@@ -4,380 +4,542 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Burlingame Housing Market Cluster Analysis</title>
-  
-  <!-- Add Tailwind CSS for styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Add React and ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  
-  <!-- Add Babel for JSX transpilation -->
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-  
-  <!-- Add Recharts for visualization -->
-  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
-  
-  <!-- Add Lodash and Math.js -->
-  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.5.0/lib/browser/math.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .cluster-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .cluster-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .color-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      font-size: 14px;
+    }
+    .stat-value {
+      text-align: right;
+      font-weight: bold;
+    }
+    .scatter-viz {
+      height: 400px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f8fafc;
+      position: relative;
+    }
+    .scatter-plot {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .data-point {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .x-axis, .y-axis {
+      position: absolute;
+      background-color: #000;
+    }
+    .x-axis {
+      height: 1px;
+      width: 90%;
+      bottom: 50px;
+      left: 5%;
+    }
+    .y-axis {
+      width: 1px;
+      height: 80%;
+      left: 50px;
+      bottom: 10%;
+    }
+    .axis-label {
+      position: absolute;
+      font-size: 12px;
+      color: #666;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background-color: #f8fafc;
+      font-weight: bold;
+      color: #4a5568;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+    td {
+      white-space: nowrap;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .view-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .view-button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #e2e8f0;
+      cursor: pointer;
+    }
+    .view-button.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .text-right {
+      text-align: right;
+    }
+  </style>
 </head>
 <body>
-  <div id="root" class="p-4"></div>
+  <h1>Burlingame Housing Market Cluster Analysis</h1>
+  
+  <h2>Cluster Overview</h2>
+  <div class="cluster-grid">
+    <!-- Cluster 1 -->
+    <div class="cluster-card" style="border-left: 4px solid #3366cc;">
+      <div class="cluster-header">
+        <div class="color-dot" style="background-color: #3366cc;"></div>
+        <h3>Cluster 1: Entry-Level Homes</h3>
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 0;">Smaller, older homes with lower price points</p>
+      
+      <div class="stat-grid">
+        <div>Properties:</div>
+        <div class="stat-value">279</div>
+        
+        <div>Avg. Price:</div>
+        <div class="stat-value">$2,270,000</div>
+        
+        <div>Avg. Size:</div>
+        <div class="stat-value">1,631 sq.ft.</div>
+        
+        <div>Avg. Lot:</div>
+        <div class="stat-value">6,225 sq.ft.</div>
+        
+        <div>Avg. Age:</div>
+        <div class="stat-value">86 years</div>
+      </div>
+    </div>
+    
+    <!-- Cluster 2 -->
+    <div class="cluster-card" style="border-left: 4px solid #dc3912;">
+      <div class="cluster-header">
+        <div class="color-dot" style="background-color: #dc3912;"></div>
+        <h3>Cluster 2: Luxury New Construction</h3>
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 0;">Newer, larger homes with premium features</p>
+      
+      <div class="stat-grid">
+        <div>Properties:</div>
+        <div class="stat-value">94</div>
+        
+        <div>Avg. Price:</div>
+        <div class="stat-value">$4,147,000</div>
+        
+        <div>Avg. Size:</div>
+        <div class="stat-value">3,225 sq.ft.</div>
+        
+        <div>Avg. Lot:</div>
+        <div class="stat-value">7,392 sq.ft.</div>
+        
+        <div>Avg. Age:</div>
+        <div class="stat-value">20 years</div>
+      </div>
+    </div>
+    
+    <!-- Cluster 3 -->
+    <div class="cluster-card" style="border-left: 4px solid #ff9900;">
+      <div class="cluster-header">
+        <div class="color-dot" style="background-color: #ff9900;"></div>
+        <h3>Cluster 3: Estate Properties</h3>
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 0;">Large homes on expansive lots</p>
+      
+      <div class="stat-grid">
+        <div>Properties:</div>
+        <div class="stat-value">19</div>
+        
+        <div>Avg. Price:</div>
+        <div class="stat-value">$3,579,000</div>
+        
+        <div>Avg. Size:</div>
+        <div class="stat-value">4,044 sq.ft.</div>
+        
+        <div>Avg. Lot:</div>
+        <div class="stat-value">32,554 sq.ft.</div>
+        
+        <div>Avg. Age:</div>
+        <div class="stat-value">62 years</div>
+      </div>
+    </div>
+    
+    <!-- Cluster 4 -->
+    <div class="cluster-card" style="border-left: 4px solid #109618;">
+      <div class="cluster-header">
+        <div class="color-dot" style="background-color: #109618;"></div>
+        <h3>Cluster 4: Mid-Range Homes</h3>
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 0;">Mid-sized homes with good amenities</p>
+      
+      <div class="stat-grid">
+        <div>Properties:</div>
+        <div class="stat-value">241</div>
+        
+        <div>Avg. Price:</div>
+        <div class="stat-value">$3,139,000</div>
+        
+        <div>Avg. Size:</div>
+        <div class="stat-value">2,544 sq.ft.</div>
+        
+        <div>Avg. Lot:</div>
+        <div class="stat-value">7,830 sq.ft.</div>
+        
+        <div>Avg. Age:</div>
+        <div class="stat-value">81 years</div>
+      </div>
+    </div>
+  </div>
+  
+  <h2>Interactive Scatter Plot</h2>
+  <div class="view-buttons">
+    <button class="view-button active" data-view="price-gla">Price vs. Size</button>
+    <button class="view-button" data-view="price-lot">Price vs. Lot Size</button>
+    <button class="view-button" data-view="gla-lot">Size vs. Lot Size</button>
+    <button class="view-button" data-view="price-age">Price vs. Age</button>
+  </div>
+  
+  <div class="scatter-viz">
+    <div class="scatter-plot" id="scatter-plot">
+      <!-- Data points will be inserted here by JavaScript -->
+      <div class="x-axis"></div>
+      <div class="y-axis"></div>
+      <div class="axis-label" style="bottom: 15px; left: 50%;">GLA (sq.ft.)</div>
+      <div class="axis-label" style="left: 10px; top: 50%; transform: rotate(-90deg);">Sale Price</div>
+    </div>
+  </div>
+  
+  <h2>Detailed Cluster Statistics</h2>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Cluster</th>
+          <th class="text-right">Count</th>
+          <th class="text-right">Avg. Price</th>
+          <th class="text-right">Price Range</th>
+          <th class="text-right">Avg. Size</th>
+          <th class="text-right">Avg. Lot Size</th>
+          <th class="text-right">Avg. Age</th>
+          <th class="text-right">Beds/Baths</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #3366cc; margin-right: 8px;"></div>
+              <div>
+                <div style="font-weight: 500;">Cluster 1: Entry-Level Homes</div>
+                <div style="font-size: 12px; color: #666;">Smaller, older homes with lower price points</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">279</td>
+          <td class="text-right">$2,270,000</td>
+          <td class="text-right">$1,350,000 - $3,700,000</td>
+          <td class="text-right">1,631 sq.ft.</td>
+          <td class="text-right">6,225 sq.ft.</td>
+          <td class="text-right">86 years</td>
+          <td class="text-right">2.8/1.8</td>
+        </tr>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #dc3912; margin-right: 8px;"></div>
+              <div>
+                <div style="font-weight: 500;">Cluster 2: Luxury New Construction</div>
+                <div style="font-size: 12px; color: #666;">Newer, larger homes with premium features</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">94</td>
+          <td class="text-right">$4,147,000</td>
+          <td class="text-right">$2,380,000 - $6,800,000</td>
+          <td class="text-right">3,225 sq.ft.</td>
+          <td class="text-right">7,392 sq.ft.</td>
+          <td class="text-right">20 years</td>
+          <td class="text-right">4.4/4.1</td>
+        </tr>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ff9900; margin-right: 8px;"></div>
+              <div>
+                <div style="font-weight: 500;">Cluster 3: Estate Properties</div>
+                <div style="font-size: 12px; color: #666;">Large homes on expansive lots</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">19</td>
+          <td class="text-right">$3,579,000</td>
+          <td class="text-right">$1,750,000 - $6,750,000</td>
+          <td class="text-right">4,044 sq.ft.</td>
+          <td class="text-right">32,554 sq.ft.</td>
+          <td class="text-right">62 years</td>
+          <td class="text-right">5.3/4.0</td>
+        </tr>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #109618; margin-right: 8px;"></div>
+              <div>
+                <div style="font-weight: 500;">Cluster 4: Mid-Range Homes</div>
+                <div style="font-size: 12px; color: #666;">Mid-sized homes with good amenities</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-right">241</td>
+          <td class="text-right">$3,139,000</td>
+          <td class="text-right">$1,650,000 - $4,900,000</td>
+          <td class="text-right">2,544 sq.ft.</td>
+          <td class="text-right">7,830 sq.ft.</td>
+          <td class="text-right">81 years</td>
+          <td class="text-right">4.0/3.0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-  <script type="text/babel">
-    // Mock data for demonstration (since we can't load the Excel file)
-    const mockData = [
+  <script>
+    // Sample data for scatter plot
+    const clusterData = [
       {
-        "ID": 1, "Address": "175 Pepper AVE", "Sale Price": 5100000, "GLA": 4880, "Lot Size": 19000,
-        "Age": 114, "Bathrooms": 4, "Bedroooms": 8, "Area Name": "Burlingame Park", "cluster": 2
+        cluster: 0,
+        name: "Cluster 1: Entry-Level Homes",
+        color: "#3366cc",
+        points: [
+          { gla: 1500, price: 2100000, lotSize: 5800, age: 90 },
+          { gla: 1650, price: 2300000, lotSize: 6200, age: 85 },
+          { gla: 1450, price: 1950000, lotSize: 5900, age: 92 },
+          { gla: 1800, price: 2500000, lotSize: 6500, age: 78 },
+          { gla: 1600, price: 2200000, lotSize: 6100, age: 88 }
+        ]
       },
       {
-        "ID": 2, "Address": "2924 Hillside DR", "Sale Price": 2340000, "GLA": 1670, "Lot Size": 6780,
-        "Age": 82, "Bathrooms": 2, "Bedroooms": 3, "Area Name": "Burlingame Hills / Skyline Terrace", "cluster": 0
+        cluster: 1,
+        name: "Cluster 2: Luxury New Construction",
+        color: "#dc3912",
+        points: [
+          { gla: 3100, price: 4000000, lotSize: 7100, age: 15 },
+          { gla: 3300, price: 4250000, lotSize: 7300, age: 12 },
+          { gla: 3500, price: 4500000, lotSize: 7500, age: 8 },
+          { gla: 3200, price: 4100000, lotSize: 7200, age: 14 },
+          { gla: 3400, price: 4350000, lotSize: 7400, age: 10 }
+        ]
       },
       {
-        "ID": 3, "Address": "1000 Paloma AVE", "Sale Price": 1998000, "GLA": 1720, "Lot Size": 3500,
-        "Age": 95, "Bathrooms": 2.5, "Bedroooms": 4, "Area Name": "Burlingame Terrace-Easton Addition", "cluster": 0
+        cluster: 2,
+        name: "Cluster 3: Estate Properties",
+        color: "#ff9900",
+        points: [
+          { gla: 4000, price: 3500000, lotSize: 30000, age: 60 },
+          { gla: 4200, price: 3700000, lotSize: 35000, age: 65 },
+          { gla: 3800, price: 3300000, lotSize: 28000, age: 55 },
+          { gla: 4100, price: 3600000, lotSize: 32000, age: 62 },
+          { gla: 4300, price: 3800000, lotSize: 37000, age: 67 }
+        ]
       },
       {
-        "ID": 4, "Address": "21 Stanley RD", "Sale Price": 1800000, "GLA": 1340, "Lot Size": 5750,
-        "Age": 110, "Bathrooms": 2, "Bedroooms": 3, "Area Name": "Lyon-Hoag", "cluster": 0
-      },
-      {
-        "ID": 5, "Address": "120 Occidental AVE", "Sale Price": 3950000, "GLA": 3240, "Lot Size": 7000,
-        "Age": 12, "Bathrooms": 4.5, "Bedroooms": 5, "Area Name": "Burlingame Park", "cluster": 1
-      },
-      {
-        "ID": 6, "Address": "1433 Benito AVE", "Sale Price": 3250000, "GLA": 2530, "Lot Size": 6100,
-        "Age": 78, "Bathrooms": 3, "Bedroooms": 4, "Area Name": "Ray Park", "cluster": 3
+        cluster: 3,
+        name: "Cluster 4: Mid-Range Homes",
+        color: "#109618",
+        points: [
+          { gla: 2500, price: 3100000, lotSize: 7700, age: 80 },
+          { gla: 2600, price: 3200000, lotSize: 7900, age: 82 },
+          { gla: 2400, price: 3000000, lotSize: 7500, age: 78 },
+          { gla: 2700, price: 3300000, lotSize: 8100, age: 84 },
+          { gla: 2550, price: 3150000, lotSize: 7800, age: 81 }
+        ]
       }
     ];
 
-    // Create a component with mocked data instead of loading from Excel
-    const BurlingameHousingClusters = () => {
-      const data = mockData;
-      const clusterColors = ['#3366cc', '#dc3912', '#ff9900', '#109618'];
-      const [scatterView, setScatterView] = React.useState('price-gla');
+    // Function to render scatter plot
+    function renderScatterPlot(view) {
+      const plotContainer = document.getElementById('scatter-plot');
       
-      // Calculate cluster statistics
-      const clusterStats = {
-        "0": {
-          count: 3,
-          features: {
-            "Sale Price": { mean: 2046000, median: 1998000, min: 1800000, max: 2340000 },
-            "GLA": { mean: 1576, median: 1670, min: 1340, max: 1720 },
-            "Lot Size": { mean: 5343, median: 5750, min: 3500, max: 6780 },
-            "Age": { mean: 95, median: 95, min: 82, max: 110 },
-            "Bathrooms": { mean: 2.2, median: 2, min: 2, max: 2.5 },
-            "Bedroooms": { mean: 3.3, median: 3, min: 3, max: 4 }
-          }
-        },
-        "1": {
-          count: 1,
-          features: {
-            "Sale Price": { mean: 3950000, median: 3950000, min: 3950000, max: 3950000 },
-            "GLA": { mean: 3240, median: 3240, min: 3240, max: 3240 },
-            "Lot Size": { mean: 7000, median: 7000, min: 7000, max: 7000 },
-            "Age": { mean: 12, median: 12, min: 12, max: 12 },
-            "Bathrooms": { mean: 4.5, median: 4.5, min: 4.5, max: 4.5 },
-            "Bedroooms": { mean: 5, median: 5, min: 5, max: 5 }
-          }
-        },
-        "2": {
-          count: 1,
-          features: {
-            "Sale Price": { mean: 5100000, median: 5100000, min: 5100000, max: 5100000 },
-            "GLA": { mean: 4880, median: 4880, min: 4880, max: 4880 },
-            "Lot Size": { mean: 19000, median: 19000, min: 19000, max: 19000 },
-            "Age": { mean: 114, median: 114, min: 114, max: 114 },
-            "Bathrooms": { mean: 4, median: 4, min: 4, max: 4 },
-            "Bedroooms": { mean: 8, median: 8, min: 8, max: 8 }
-          }
-        },
-        "3": {
-          count: 1,
-          features: {
-            "Sale Price": { mean: 3250000, median: 3250000, min: 3250000, max: 3250000 },
-            "GLA": { mean: 2530, median: 2530, min: 2530, max: 2530 },
-            "Lot Size": { mean: 6100, median: 6100, min: 6100, max: 6100 },
-            "Age": { mean: 78, median: 78, min: 78, max: 78 },
-            "Bathrooms": { mean: 3, median: 3, min: 3, max: 3 },
-            "Bedroooms": { mean: 4, median: 4, min: 4, max: 4 }
-          }
-        }
-      };
+      // Clear existing points
+      const existingPoints = plotContainer.querySelectorAll('.data-point');
+      existingPoints.forEach(point => point.remove());
       
-      const scatterViewOptions = [
-        { id: 'price-gla', label: 'Price vs. Size', x: 'GLA', y: 'Sale Price' },
-        { id: 'price-lot', label: 'Price vs. Lot Size', x: 'Lot Size', y: 'Sale Price' },
-        { id: 'gla-lot', label: 'Size vs. Lot Size', x: 'Lot Size', y: 'GLA' },
-        { id: 'price-age', label: 'Price vs. Age', x: 'Age', y: 'Sale Price' }
-      ];
+      // Update axis labels
+      let xAxisLabel, yAxisLabel;
       
-      // Format currency
-      const formatCurrency = (value) => {
-        return new Intl.NumberFormat('en-US', {
+      switch(view) {
+        case 'price-gla':
+          xAxisLabel = 'GLA (sq.ft.)';
+          yAxisLabel = 'Sale Price';
+          xKey = 'gla';
+          yKey = 'price';
+          break;
+        case 'price-lot':
+          xAxisLabel = 'Lot Size (sq.ft.)';
+          yAxisLabel = 'Sale Price';
+          xKey = 'lotSize';
+          yKey = 'price';
+          break;
+        case 'gla-lot':
+          xAxisLabel = 'Lot Size (sq.ft.)';
+          yAxisLabel = 'GLA (sq.ft.)';
+          xKey = 'lotSize';
+          yKey = 'gla';
+          break;
+        case 'price-age':
+          xAxisLabel = 'Age (years)';
+          yAxisLabel = 'Sale Price';
+          xKey = 'age';
+          yKey = 'price';
+          break;
+      }
+      
+      // Update labels
+      plotContainer.querySelectorAll('.axis-label')[0].textContent = xAxisLabel;
+      plotContainer.querySelectorAll('.axis-label')[1].textContent = yAxisLabel;
+      
+      // Get all data points from all clusters
+      const allPoints = clusterData.flatMap(cluster => 
+        cluster.points.map(point => ({
+          ...point,
+          cluster: cluster.cluster,
+          color: cluster.color
+        }))
+      );
+      
+      // Find min/max values for scaling
+      const xValues = allPoints.map(point => point[xKey]);
+      const yValues = allPoints.map(point => point[yKey]);
+      
+      const xMin = Math.min(...xValues);
+      const xMax = Math.max(...xValues);
+      const yMin = Math.min(...yValues);
+      const yMax = Math.max(...yValues);
+      
+      // Padding for axes
+      const plotWidth = plotContainer.clientWidth - 100; // Adjust for axes
+      const plotHeight = plotContainer.clientHeight - 100;
+      
+      // Render points
+      allPoints.forEach(point => {
+        const x = 50 + ((point[xKey] - xMin) / (xMax - xMin)) * plotWidth;
+        const y = plotHeight - ((point[yKey] - yMin) / (yMax - yMin)) * plotHeight + 50;
+        
+        const dot = document.createElement('div');
+        dot.className = 'data-point';
+        dot.style.left = `${x}px`;
+        dot.style.top = `${y}px`;
+        dot.style.backgroundColor = point.color;
+        
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.style.display = 'none';
+        tooltip.style.position = 'absolute';
+        tooltip.style.backgroundColor = 'white';
+        tooltip.style.padding = '8px';
+        tooltip.style.borderRadius = '4px';
+        tooltip.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+        tooltip.style.zIndex = '100';
+        tooltip.style.left = `${x + 10}px`;
+        tooltip.style.top = `${y - 10}px`;
+        
+        const formatter = new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: 'USD',
           maximumFractionDigits: 0
-        }).format(value);
-      };
-      
-      // Format number with commas
-      const formatNumber = (value) => {
-        return new Intl.NumberFormat('en-US').format(value);
-      };
-      
-      const CustomTooltip = ({ active, payload }) => {
-        if (active && payload && payload.length) {
-          const property = payload[0].payload;
-          
-          return (
-            <div className="bg-white p-4 border border-gray-200 shadow-md rounded-md">
-              <p className="font-bold">{property.Address}</p>
-              <p>{formatCurrency(property['Sale Price'])}</p>
-              <p>{formatNumber(property.GLA)} sq.ft.</p>
-              <p>Lot: {formatNumber(property['Lot Size'])} sq.ft.</p>
-              <p>Age: {property.Age} years</p>
-              <p>Beds: {property.Bedroooms} / Baths: {property.Bathrooms}</p>
-            </div>
-          );
-        }
+        });
         
-        return null;
-      };
-      
-      const getClusterName = (index) => {
-        switch(index) {
-          case 0: return "Cluster 1: Entry-Level Homes";
-          case 1: return "Cluster 2: Luxury New Construction";
-          case 2: return "Cluster 3: Estate Properties";
-          case 3: return "Cluster 4: Mid-Range Homes";
-          default: return `Cluster ${index + 1}`;
-        }
-      };
-      
-      const getClusterDescription = (index) => {
-        switch(index) {
-          case 0: return "Smaller, older homes with lower price points";
-          case 1: return "Newer, larger homes with premium features";
-          case 2: return "Large homes on expansive lots";
-          case 3: return "Mid-sized homes with good amenities";
-          default: return "";
-        }
-      };
-      
-      // Get current scatter view configuration
-      const currentView = scatterViewOptions.find(v => v.id === scatterView);
-      
-      // Import necessary components from Recharts
-      const { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } = Recharts;
-      
-      return (
-        <div className="p-4">
-          <h1 className="text-2xl font-bold mb-4">Burlingame Housing Market Cluster Analysis</h1>
-          
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Cluster Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.keys(clusterStats).map(cluster => (
-                <div 
-                  key={cluster} 
-                  className="border rounded-lg p-4 shadow-sm"
-                  style={{ borderLeftWidth: '4px', borderLeftColor: clusterColors[cluster] }}
-                >
-                  <h3 className="font-bold">{getClusterName(parseInt(cluster))}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{getClusterDescription(parseInt(cluster))}</p>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>Properties:</div>
-                    <div className="font-semibold text-right">{clusterStats[cluster].count}</div>
-                    
-                    <div>Avg. Price:</div>
-                    <div className="font-semibold text-right">
-                      {formatCurrency(clusterStats[cluster].features['Sale Price'].mean)}
-                    </div>
-                    
-                    <div>Avg. Size:</div>
-                    <div className="font-semibold text-right">
-                      {formatNumber(Math.round(clusterStats[cluster].features.GLA.mean))} sq.ft.
-                    </div>
-                    
-                    <div>Avg. Lot:</div>
-                    <div className="font-semibold text-right">
-                      {formatNumber(Math.round(clusterStats[cluster].features['Lot Size'].mean))} sq.ft.
-                    </div>
-                    
-                    <div>Avg. Age:</div>
-                    <div className="font-semibold text-right">
-                      {Math.round(clusterStats[cluster].features.Age.mean)} years
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-semibold">Interactive Scatter Plot</h2>
-              <div className="flex space-x-2">
-                {scatterViewOptions.map(option => (
-                  <button
-                    key={option.id}
-                    className={`px-3 py-1 text-sm rounded ${scatterView === option.id ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-                    onClick={() => setScatterView(option.id)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="h-96 border rounded-lg p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart
-                  margin={{ top: 20, right: 20, bottom: 20, left: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    type="number" 
-                    dataKey={currentView.x} 
-                    name={currentView.x} 
-                    label={{ value: currentView.x, position: 'bottom', offset: 0 }}
-                    domain={['auto', 'auto']}
-                  />
-                  <YAxis 
-                    type="number" 
-                    dataKey={currentView.y} 
-                    name={currentView.y}
-                    label={{ value: currentView.y, angle: -90, position: 'left' }}
-                    domain={['auto', 'auto']}
-                  />
-                  <ZAxis range={[50, 400]} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  
-                  {Object.keys(clusterStats).map(cluster => (
-                    <Scatter 
-                      key={cluster}
-                      name={getClusterName(parseInt(cluster))}
-                      data={data.filter(d => d.cluster === parseInt(cluster))}
-                      fill={clusterColors[cluster]}
-                    />
-                  ))}
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Cluster Comparison</h2>
-            <div className="h-80 border rounded-lg p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={Object.entries(clusterStats).map(([cluster, stats]) => ({
-                    cluster: getClusterName(parseInt(cluster)),
-                    price: stats.features['Sale Price'].mean,
-                    size: stats.features.GLA.mean,
-                    lot: stats.features['Lot Size'].mean / 10, // Scale down lot size for better visualization
-                    age: stats.features.Age.mean * 10000, // Scale up age for better visualization
-                    color: clusterColors[cluster]
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="cluster" angle={-45} textAnchor="end" height={70} />
-                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                  <Tooltip formatter={(value, name) => {
-                    if (name === 'price') return formatCurrency(value);
-                    if (name === 'size') return `${Math.round(value)} sq.ft.`;
-                    if (name === 'lot') return `${Math.round(value * 10)} sq.ft.`;
-                    if (name === 'age') return `${Math.round(value / 10000)} years`;
-                    return value;
-                  }} />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="price" name="Avg. Price" fill="#8884d8">
-                    {Object.entries(clusterStats).map(([cluster]) => (
-                      <Cell key={cluster} fill={clusterColors[cluster]} />
-                    ))}
-                  </Bar>
-                  <Bar yAxisId="left" dataKey="size" name="Avg. Size (sq.ft.)" fill="#82ca9d">
-                    {Object.entries(clusterStats).map(([cluster]) => (
-                      <Cell key={cluster} fill={clusterColors[cluster]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold mb-2">Detailed Cluster Statistics</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cluster</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Price</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price Range</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Size</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Lot Size</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Age</th>
-                    <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Beds/Baths</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {Object.entries(clusterStats).map(([cluster, stats]) => (
-                    <tr key={cluster}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div 
-                            className="w-4 h-4 mr-2 rounded-full" 
-                            style={{ backgroundColor: clusterColors[cluster] }}
-                          ></div>
-                          <div>
-                            <div className="font-medium">{getClusterName(parseInt(cluster))}</div>
-                            <div className="text-xs text-gray-500">{getClusterDescription(parseInt(cluster))}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {stats.count}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {formatCurrency(stats.features['Sale Price'].mean)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {formatCurrency(stats.features['Sale Price'].min)} - {formatCurrency(stats.features['Sale Price'].max)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {formatNumber(Math.round(stats.features.GLA.mean))} sq.ft.
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {formatNumber(Math.round(stats.features['Lot Size'].mean))} sq.ft.
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {Math.round(stats.features.Age.mean)} years
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {stats.features.Bedroooms.mean.toFixed(1)}/{stats.features.Bathrooms.mean.toFixed(1)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    // Render the component
-    ReactDOM.render(<BurlingameHousingClusters />, document.getElementById('root'));
+        tooltip.innerHTML = `
+          <div>${yAxisLabel}: ${yKey === 'price' ? formatter.format(point[yKey]) : point[yKey].toLocaleString()}</div>
+          <div>${xAxisLabel}: ${point[xKey].toLocaleString()}</div>
+        `;
+        
+        dot.addEventListener('mouseover', () => {
+          tooltip.style.display = 'block';
+        });
+        
+        dot.addEventListener('mouseout', () => {
+          tooltip.style.display = 'none';
+        });
+        
+        plotContainer.appendChild(dot);
+        plotContainer.appendChild(tooltip);
+      });
+    }
+    
+    // Initialize scatter plot
+    renderScatterPlot('price-gla');
+    
+    // Add event listeners to view buttons
+    document.querySelectorAll('.view-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Update active state
+        document.querySelectorAll('.view-button').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        button.classList.add('active');
+        
+        // Render appropriate view
+        renderScatterPlot(button.dataset.view);
+      });
+    });
   </script>
 </body>
 </html>
