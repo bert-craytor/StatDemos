@@ -1,0 +1,347 @@
+import React, { useState, useEffect } from 'react';
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import * as XLSX from 'xlsx';
+import * as math from 'mathjs';
+import _ from 'lodash';
+
+const BurlingameNeighborhoods = () => {
+  const [data, setData] = useState([]);
+  const [neighborhoods, setNeighborhoods] = useState([]);
+  const [neighborhoodStats, setNeighborhoodStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedFeature, setSelectedFeature] = useState('Sale Price');
+  
+  const neighborhoodColors = [
+    '#3366cc', '#dc3912', '#ff9900', '#109618', '#990099',
+    '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395',
+    '#994499', '#22aa99', '#aaaa11', '#6633cc', '#e67300'
+  ];
+  
+  const featureOptions = [
+    { id: 'Sale Price', label: 'Average Price', format: 'currency' },
+    { id: 'GLA', label: 'Home Size (sq.ft.)', format: 'number' },
+    { id: 'Lot Size', label: 'Lot Size (sq.ft.)', format: 'number' },
+    { id: 'Age', label: 'Property Age', format: 'number' },
+    { id: 'Bedroooms', label: 'Bedrooms', format: 'decimal' },
+    { id: 'Bathrooms', label: 'Bathrooms', format: 'decimal' }
+  ];
+  
+  useEffect(() => {
+    async function processData() {
+      try {
+        setLoading(true);
+        
+        // Read the Excel file
+        const response = await window.fs.readFile('MlsBurlingame.xlsx');
+        const workbook = XLSX.read(response, { cellDates: true });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Filter data with area names and required fields
+        const areaNameField = 'Area Name';
+        const filteredData = jsonData.filter(row => 
+          row[areaNameField] !== undefined && 
+          row[areaNameField] !== null && 
+          row[areaNameField] !== '' &&
+          row['Sale Price'] !== undefined &&
+          row.GLA !== undefined &&
+          row['Lot Size'] !== undefined &&
+          row.Latitude !== undefined &&
+          row.Longitude !== undefined
+        );
+        
+        // Get all unique neighborhoods
+        const areas = _.uniq(filteredData.map(row => row[areaNameField]));
+        
+        // Calculate statistics for each neighborhood
+        const areaStats = {};
+        const selectedFeatures = ['Sale Price', 'GLA', 'Lot Size', 'Age', 'Bathrooms', 'Bedroooms'];
+        
+        _.forEach(_.groupBy(filteredData, areaNameField), (properties, area) => {
+          // Only consider areas with at least 5 properties
+          if (properties.length < 5) return;
+          
+          areaStats[area] = {
+            count: properties.length,
+            features: {}
+          };
+          
+          // Calculate statistics for each feature
+          selectedFeatures.forEach(feature => {
+            const values = properties.map(row => row[feature]).filter(v => v !== undefined);
+            if (values.length > 0) {
+              areaStats[area].features[feature] = {
+                mean: math.mean(values),
+                median: math.median(values),
+                min: math.min(values),
+                max: math.max(values)
+              };
+            }
+          });
+          
+          // Calculate neighborhood centroid
+          const propertiesWithCoords = properties.filter(p => p.Latitude && p.Longitude);
+          if (propertiesWithCoords.length > 0) {
+            areaStats[area].centroid = {
+              lat: math.mean(propertiesWithCoords.map(row => row.Latitude)),
+              lng: math.mean(propertiesWithCoords.map(row => row.Longitude))
+            };
+          }
+        });
+        
+        setData(filteredData);
+        setNeighborhoods(areas);
+        setNeighborhoodStats(areaStats);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error processing data:', err);
+        setError('Failed to process data. Please try again.');
+        setLoading(false);
+      }
+    }
+    
+    processData();
+  }, []);
+  
+  // Format currency
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+  
+  // Format number with commas
+  const formatNumber = (value) => {
+    return new Intl.NumberFormat('en-US').format(value);
+  };
+  
+  // Format value based on feature type
+  const formatValue = (value, format) => {
+    if (format === 'currency') return formatCurrency(value);
+    if (format === 'number') return formatNumber(value);
+    if (format === 'decimal') return value.toFixed(1);
+    return value;
+  };
+  
+  // Get formatted feature name
+  const getFeatureName = (featureId) => {
+    const feature = featureOptions.find(f => f.id === featureId);
+    return feature ? feature.label : featureId;
+  };
+  
+  // Get feature format
+  const getFeatureFormat = (featureId) => {
+    const feature = featureOptions.find(f => f.id === featureId);
+    return feature ? feature.format : 'number';
+  };
+  
+  // Custom tooltip for scatter plot
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const property = payload[0].payload;
+      
+      return (
+        <div className="bg-white p-4 border border-gray-200 shadow-md rounded-md">
+          <p className="font-bold">{property.Address}</p>
+          <p>{property['Area Name']}</p>
+          <p>{formatCurrency(property['Sale Price'])}</p>
+          <p>{formatNumber(property.GLA)} sq.ft.</p>
+          <p>Lot: {formatNumber(property['Lot Size'])} sq.ft.</p>
+          <p>Age: {property.Age} years</p>
+          <p>Beds: {property.Bedroooms} / Baths: {property.Bathrooms}</p>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+  
+  // Get color for a neighborhood
+  const getNeighborhoodColor = (name, index) => {
+    const colorIndex = index % neighborhoodColors.length;
+    return neighborhoodColors[colorIndex];
+  };
+  
+  if (loading) {
+    return <div className="text-center p-8">Loading Burlingame housing data and analyzing neighborhoods...</div>;
+  }
+  
+  if (error) {
+    return <div className="text-center p-8 text-red-600">{error}</div>;
+  }
+  
+  // Sort neighborhoods by the selected feature for bar chart
+  const sortedNeighborhoods = Object.entries(neighborhoodStats)
+    .filter(([area, stats]) => stats.features[selectedFeature])
+    .sort((a, b) => {
+      const aValue = a[1].features[selectedFeature].mean;
+      const bValue = b[1].features[selectedFeature].mean;
+      return bValue - aValue;
+    });
+  
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Burlingame Neighborhood Housing Analysis</h1>
+      <p className="mb-6">Analysis of {data.length} properties across {Object.keys(neighborhoodStats).length} neighborhoods in Burlingame</p>
+      
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">Geographical Property Distribution</h2>
+        <div className="h-96 border rounded-lg p-4 bg-gray-50">
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                type="number" 
+                dataKey="Longitude" 
+                name="Longitude" 
+                domain={['auto', 'auto']}
+                label={{ value: "Longitude", position: 'bottom', offset: 0 }}
+              />
+              <YAxis 
+                type="number" 
+                dataKey="Latitude" 
+                name="Latitude"
+                domain={['auto', 'auto']}
+                label={{ value: "Latitude", angle: -90, position: 'left' }}
+              />
+              <ZAxis range={[20, 200]} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              
+              {Object.keys(neighborhoodStats).map((neighborhood, index) => (
+                <Scatter 
+                  key={neighborhood}
+                  name={neighborhood}
+                  data={data.filter(d => d['Area Name'] === neighborhood)}
+                  fill={getNeighborhoodColor(neighborhood, index)}
+                />
+              ))}
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="text-sm text-gray-600 mt-2">Each point represents a property, colored by neighborhood. Note how properties cluster geographically.</p>
+      </div>
+      
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Neighborhood Comparison</h2>
+          <div className="flex space-x-2">
+            {featureOptions.map(option => (
+              <button
+                key={option.id}
+                className={`px-3 py-1 text-sm rounded ${selectedFeature === option.id ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                onClick={() => setSelectedFeature(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="h-96 border rounded-lg p-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={sortedNeighborhoods.map(([area, stats], index) => ({
+                name: area,
+                value: stats.features[selectedFeature].mean,
+                count: stats.count,
+                format: getFeatureFormat(selectedFeature),
+                color: getNeighborhoodColor(area, index)
+              }))}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 250, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis 
+                dataKey="name" 
+                type="category" 
+                width={240}
+                tickFormatter={(value) => value.length > 32 ? value.substring(0, 30) + '...' : value}
+              />
+              <Tooltip 
+                formatter={(value, name, props) => [
+                  formatValue(value, props.payload.format),
+                  getFeatureName(selectedFeature)
+                ]}
+                labelFormatter={(value) => value}
+              />
+              <Legend />
+              <Bar 
+                dataKey="value" 
+                name={getFeatureName(selectedFeature)}
+              >
+                {sortedNeighborhoods.map(([area], index) => (
+                  <Cell key={area} fill={getNeighborhoodColor(area, index)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Detailed Neighborhood Statistics</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Neighborhood</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Properties</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Price</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price Range</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Size</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Lot Size</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Age</th>
+                <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Beds/Baths</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedNeighborhoods.map(([area, stats], index) => (
+                <tr key={area}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div 
+                        className="w-4 h-4 mr-2 rounded-full" 
+                        style={{ backgroundColor: getNeighborhoodColor(area, index) }}
+                      ></div>
+                      <div className="font-medium">{area}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {stats.count}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {formatCurrency(stats.features['Sale Price'].mean)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {formatCurrency(stats.features['Sale Price'].min)} - {formatCurrency(stats.features['Sale Price'].max)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {formatNumber(Math.round(stats.features.GLA.mean))} sq.ft.
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {formatNumber(Math.round(stats.features['Lot Size'].mean))} sq.ft.
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {Math.round(stats.features.Age.mean)} years
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    {stats.features.Bedroooms?.mean.toFixed(1) || 'N/A'}/{stats.features.Bathrooms?.mean.toFixed(1) || 'N/A'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BurlingameNeighborhoods;
